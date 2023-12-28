@@ -1,0 +1,20 @@
+{
+  "name": "oden-jobfetch",
+  "version": "1.0.0",
+  "description": "A job fetcher",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chattopadhyay, Aniket",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "mongodb": "^6.3.0",
+    "mongoose": "^8.0.3",
+    "morgan": "^1.10.0",
+    "pino": "^8.17.2"
+  }
+}

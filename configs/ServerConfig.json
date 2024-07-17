@@ -1,0 +1,13 @@
+{
+    "mode": {
+        "current": "LOCAL",
+        "available": {
+            "PUBLIC": "PUBLIC", 
+            "LOCAL": "LOCAL"
+        }
+    },
+    "jobFetchLock": {
+        "jpmc": 0,
+        "oracle": 0
+    }
+}

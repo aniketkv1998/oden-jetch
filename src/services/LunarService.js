@@ -2,66 +2,69 @@ const utilityService = require("./UtilityService.js");
 
 const MODULE_NAME = utilityService.getModuleName(__filename);
 
-async function get(model, database, projection) {
+async function insertManyJobs(model, documents, database) {
+  const logger = utilityService.getLogger(MODULE_NAME);
+
+  logger.info(utilityService.commonLoggerStatements.SERVICE_START);
+
+  logger.info(`Inserting data - ${database.id}`);
+
+  await model.insertMany(documents);
+  
+  logger.info(utilityService.commonLoggerStatements.SERVICE_END);
+}
+
+async function getByCompany(model, database, options = {}) {
   let databaseResponse;
+  const projection = options.projection;
+  const filter = options.filter ? options.filter : {};
+  
+  filter.company = database.id
 
   const logger = utilityService.getLogger(MODULE_NAME);
 
   logger.info(utilityService.commonLoggerStatements.SERVICE_START);
 
-  await database.connect();
-
-  logger.info(`Finding id - ${database.id} :: projection - ${projection}`);
+  logger.info(`Finding - ${database.id} :: filter - ${JSON.stringify(filter)} :: projection - ${JSON.stringify(projection)}`);
   if (projection) {
     databaseResponse = await model
-      .findById(database.id)
+      .find(filter)
       .select(projection)
       .lean();
   } else {
-    databaseResponse = await model.findById(database.id).lean();
+    databaseResponse = await model.find(filter).lean();
   }
-
-  await database.closeConnection();
 
   logger.info(utilityService.commonLoggerStatements.SERVICE_END);
 
   return databaseResponse;
 }
 
-async function save(document, database) {
+async function updateManyWithSeparateFilters(model, updateArray, database) {
   const logger = utilityService.getLogger(MODULE_NAME);
 
   logger.info(utilityService.commonLoggerStatements.SERVICE_START);
 
-  await database.connect();
+  updateArray = updateArray.map((object) => {
+    return {
+      updateOne: {
+        filter: object.filter,
+        update: object.update
+      }
+    };
+  });
 
-  logger.info(`Saving data - ${database.id}.`);
-  await document.save();
+  logger.info(`Updating data - ${database.id}.`);
 
-  await database.closeConnection();
-
-  logger.info(utilityService.commonLoggerStatements.SERVICE_END);
-}
-
-async function replace(model, database, newObject) {
-  const logger = utilityService.getLogger(MODULE_NAME);
-
-  logger.info(utilityService.commonLoggerStatements.SERVICE_START);
-
-  await database.connect();
-
-  logger.info(`Replacing data - ${database.id}.`);
-  const response = await model.replaceOne({ _id: database.id }, newObject);
-
-  await database.closeConnection();
+  const response = await model.bulkWrite(updateArray);
 
   logger.info(utilityService.commonLoggerStatements.SERVICE_END);
 
-  return response;
+  return { modifiedCount: response.modifiedCount };
 }
 
 module.exports = {
-  get,
-  save,
-  replace,
+  insertManyJobs,
+  getByCompany,
+  updateManyWithSeparateFilters
 };

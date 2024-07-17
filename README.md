@@ -1,2 +1,2 @@
-# oden-jobfetch
+# oden-jetch
 A job fetcher

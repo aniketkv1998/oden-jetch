@@ -1,5 +1,28 @@
+const express = require("express");
 const path = require("path");
 const pino = require("pino");
+
+const serverConfig = require("../../configs/ServerConfig.json");
+
+server = express();
+
+server.locals = {
+  mode: {
+    current: serverConfig.mode.current,
+    available: {
+      LOCAL: serverConfig.mode.available.LOCAL,
+      PUBLIC: serverConfig.mode.available.PUBLIC
+    }
+  },
+  jobs: {
+    jpmc: [],
+    oracle: []
+  },
+  jobFetchLock: {
+    jpmc: 0,
+    oracle: 0
+  }
+}
 
 const commonLoggerStatements = {
   SERVICE_START: "SERVICE::START",
@@ -11,30 +34,27 @@ async function sleep(delay) {
 }
 
 function getTimestamp(date) {
-  const dateVal = date.getDate();
-  const month = date.getMonth() + 1;
-  const year = date.getFullYear();
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
-  const milliseconds = date.getMilliseconds();
-
-  return `${year}-${month}-${dateVal}T${hours}:${minutes}:${seconds}.${milliseconds}`;
+  return date.toISOString();
 }
 
 function getLogger(moduleName) {
-  return pino({
-    level: "debug",
-    formatters: {
-      level(label, number) {
-        return { level: label };
+  return pino(
+    {
+      level: "debug",
+      formatters: {
+        level(label, number) {
+          return { level: label };
+        },
+        bindings(bindings) {
+          return { name: moduleName + "::" + getLogger.caller.name };
+        },
       },
-      bindings(bindings) {
-        return { name: moduleName + "::" + getLogger.caller.name };
-      },
-    },
-    timestamp: () => `, "time":"${getTimestamp(new Date(Date.now()))}"`,
-  });
+      timestamp: () => `, "time":"${getTimestamp(new Date(Date.now()))}"`,
+    }, 
+    pino.destination({
+      sync: true
+    })
+  );
 }
 
 function getModuleName(fileName) {
@@ -47,7 +67,6 @@ function findIntersection(set1, set2) {
 
   set1.forEach((data) => map.set(data, false));
   set2.forEach((data) => {
-    const temp = map.has(data);
     if (map.has(data)) {
       map.set(data, true);
     } else {
@@ -55,7 +74,7 @@ function findIntersection(set1, set2) {
     }
   });
 
-  map.forEach((value, key, map) => {
+  map.forEach((value, key) => {
     if (value) {
       intersection.push(key);
     }
@@ -66,27 +85,24 @@ function findIntersection(set1, set2) {
 
 function findDifference(set1, set2) {
   const difference = [];
-  let intersectionPossible = true;
   const map = new Map();
 
-  set1.forEach((data) => map.set(data, false));
-  set2.forEach((data) => {
-    if (map.has(data)) {
-      map.set(data, true);
-    } else {
-      intersectionPossible = false;
-    }
-  });
+  const valuesInIntersection = findIntersection(set1, set2);
 
-  if (intersectionPossible) {
-    map.forEach((value, key, map) => {
-      if (!value) {
-        difference.push(key);
+  set1.forEach((data) => map.set(data, true));
+  if (valuesInIntersection.length > 0) {
+    valuesInIntersection.forEach((data) => {
+      if (map.has(data)) {
+        map.set(data, false);
       }
     });
-  } else {
-    return null;
   }
+
+  map.forEach((value, key, map) => {
+    if (value) {
+      difference.push(key);
+    }
+  });
 
   return difference;
 }
@@ -103,22 +119,23 @@ function findDifferenceBetweenDates(date1, date2, differenceType) {
     case "DAYS": {
       return difference / (1000 * 60 * 60 * 24);
     }
-    case "MINUTES": {
+    case "HOURS": {
       return difference / (1000 * 60 * 60);
     }
-    case "SECONDS": {
+    case "MINUTES": {
       return difference / (1000 * 60);
     }
-    case "MILLISECONDS": {
+    case "SECONDS": {
       return difference / 1000;
     }
     default: {
-      return difference / 1000;
+      return difference;
     }
   }
 }
 
 module.exports = {
+  server,
   commonLoggerStatements,
   sleep,
   getModuleName,

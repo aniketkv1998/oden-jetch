@@ -4,11 +4,6 @@ const utilityService = require("../services/UtilityService");
 
 const MODULE_NAME = utilityService.getModuleName(__filename);
 const idValue = "jpmc";
-const appliedValues = {
-  APPLIED: "applied",
-  NOT_APPLIED: "not_applied",
-  CANNOT_APPLY: "cannot_apply",
-};
 
 const JpmcSchema = new Schema({
     fetchDate: String,
@@ -36,14 +31,6 @@ const JpmcSchema = new Schema({
 });
 
 const jobs = mongoose.model("JpmcJobs", JpmcSchema, "jobs");
-
-async function closeConnection() {
-    const logger = utilityService.getLogger(MODULE_NAME);
-
-    logger.info("Closing connection with mongoDB server for lunar database.");
-
-    return await mongoose.disconnect();
-}
 
 function createJobsArray(jobsArray) {
     const fetchDate = utilityService.getTimestamp(new Date(Date.now()))
@@ -104,7 +91,6 @@ function createJobsArray(jobsArray) {
 module.exports = {
   jobs,
   id: idValue,
-  applied: appliedValues,
   createJobsArray,
   closeConnection,
 };

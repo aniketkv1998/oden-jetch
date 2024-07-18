@@ -2,7 +2,6 @@ const { Schema, default: mongoose } = require("mongoose");
 
 const utilityService = require("../services/UtilityService");
 
-const MODULE_NAME = utilityService.getModuleName(__filename);
 const idValue = "jpmc";
 
 const JpmcSchema = new Schema({
@@ -92,5 +91,4 @@ module.exports = {
   jobs,
   id: idValue,
   createJobsArray,
-  closeConnection,
 };

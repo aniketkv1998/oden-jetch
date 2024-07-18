@@ -162,6 +162,10 @@ async function getAllJobs(expiredFlag) {
       }
     });
 
+    response.sort((job1, job2) => {
+      return new Date(job2.fetchDate) - new Date(job1.fetchDate);
+    });
+
     jobs = response;
   }
 
@@ -187,7 +191,7 @@ async function expireJobs(jobHashes) {
 
   const jobs = jobHashes.map((jobHash) => {
     return {
-      filter: jobHash,
+      filter: { jobHash },
       update: { expiredFlag: true }
     };
   });
@@ -213,10 +217,8 @@ function areExistingJobsTooOld(jobs) {
   let areExistingJobsTooOldFlag = true;
 
   if (jobs.length > 0) {
-    // console.log("Current Date:", new Date(Date.now()));
-    // console.log("Old job date:", new Date(jobs[0].fetchDate));
-    // console.log("Difference between dates:", utilityService.findDifferenceBetweenDates(new Date(Date.now()), new Date(jobs[0].fetchDate), "HOURS"));
-    areExistingJobsTooOldFlag = utilityService.findDifferenceBetweenDates(new Date(Date.now()), jobs[0].fetchDate, "HOURS") > 23.5
+
+    areExistingJobsTooOldFlag = utilityService.findDifferenceBetweenDates(new Date(Date.now()), new Date(jobs[0].fetchDate), "HOURS") > 23.5;
   }
 
   logger.info(`Are existing jobs too old: ${areExistingJobsTooOldFlag}`);
